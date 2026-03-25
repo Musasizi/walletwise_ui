@@ -1,23 +1,18 @@
 /**
- * layouts/ModernLayout.jsx — UCU-Branded App Shell
+ * layouts/ModernLayout.jsx — WalletWise App Shell
  *
  * STRUCTURE:
- *   ┌────────────────────────────────────────────────────┐
- *   │  Sidebar (permanent Drawer, 240px, UCU Maroon)     │
- *   │    UCU crest + university name                     │
- *   │    Navigation items — active = gold left border    │
- *   │    User avatar + name + logout at bottom           │
- *   ├────────────────────────────────────────────────────┤
- *   │  AppBar (white, 3px maroon bottom border)          │
- *   │    Breadcrumb: Home › Current Page                 │
- *   │    Logged-in user chip                             │
- *   ├────────────────────────────────────────────────────┤
- *   │  Page content — {children}                         │
- *   └────────────────────────────────────────────────────┘
- *
- * PROPS:
- *   children  – the page component rendered in the content area
- *   user      – decoded JWT payload: { id, username, email, iat, exp }
+ *   ┌──────────────────────────────────────────────┐
+ *   │  Sidebar (permanent, 240 px, deep teal)      │
+ *   │    WalletWise brand                          │
+ *   │    Navigation: Dashboard · Income · Expense  │
+ *   │                Balance · Reports · Users     │
+ *   │    User avatar + logout at bottom            │
+ *   ├──────────────────────────────────────────────┤
+ *   │  AppBar – breadcrumb + user chip             │
+ *   ├──────────────────────────────────────────────┤
+ *   │  Page content – {children}                   │
+ *   └──────────────────────────────────────────────┘
  */
 
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -27,49 +22,50 @@ import {
   IconButton, Breadcrumbs, Link, Chip,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import PeopleIcon from '@mui/icons-material/People';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import ucuLogo from '../assets/uculogotousenobg.png';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DRAWER_WIDTH = 240;
 
-// UCU brand colours — keep in sync with main.jsx ucuTheme
-const UCU = {
-  maroon: '#7B1C1C',
-  maroonDark: '#5C1010',
-  gold: '#C9A227',
-  goldLight: '#F5E6B0',
+const WW = {
+  teal: '#0D6E6E',
+  tealDark: '#094F4F',
+  accent: '#F0A500',
+  accentLight: '#FFF3CD',
   white: '#FFFFFF',
-  offWhite: '#F9F5F0',
+  offWhite: '#F4F6F8',
 };
 
-// Sidebar navigation items
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-  { path: '/chapters', label: 'Chapters', icon: <MenuBookIcon /> },
+  { path: '/income', label: 'Income', icon: <ArrowUpwardIcon /> },
+  { path: '/expense', label: 'Expense', icon: <ArrowDownwardIcon /> },
+  { path: '/balance', label: 'Balance', icon: <AccountBalanceWalletIcon /> },
+  { path: '/reports', label: 'Reports', icon: <BarChartIcon /> },
   { path: '/users', label: 'Users', icon: <PeopleIcon /> },
-  { path: '/reports', label: 'Reports', icon: <AssessmentIcon /> },
 ];
 
-// Map path → human-readable breadcrumb label
 const PAGE_LABELS = {
   '/dashboard': 'Dashboard',
-  '/chapters': 'Chapters',
-  '/users': 'Users',
+  '/income': 'Income',
+  '/expense': 'Expense',
+  '/balance': 'Balance',
   '/reports': 'Reports',
+  '/users': 'Users',
 };
 
-// Pick an avatar background from a small palette, based on first character of username
-const AVATAR_COLORS = [UCU.maroon, '#7B3F00', '#1A4A7B', '#1A5C2E', '#4A1A7B'];
+const AVATAR_COLORS = [WW.teal, '#7B3F00', '#1A4A7B', '#1A5C2E', '#4A1A7B'];
 const avatarBg = (name = '') =>
   AVATAR_COLORS[(name.codePointAt(0) ?? 0) % AVATAR_COLORS.length];
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function ModernLayout({ children, user }) {
+export default function ModernLayout({ children, user, onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -78,62 +74,27 @@ export default function ModernLayout({ children, user }) {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    if (onLogout) onLogout();
     navigate('/login');
   };
 
   // ── Sidebar contents ────────────────────────────────────────────────────────
   const drawer = (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        bgcolor: UCU.maroon,
-        color: UCU.white,
-      }}
-    >
-      {/* UCU Branding header */}
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: WW.teal, color: WW.white }}>
+
+      {/* Brand header */}
       <Box sx={{ px: 2.5, pt: 3, pb: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={0.5}>
-          <Box
-            sx={{
-              width: 42, height: 42,
-              borderRadius: '50%',
-              bgcolor: UCU.white,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-              p: 0.4,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-            }}
-          >
-            <Box
-              component="img"
-              src={ucuLogo}
-              alt="UCU Logo"
-              sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          </Box>
+          <AccountBalanceWalletIcon sx={{ fontSize: 32, color: WW.accent }} />
           <Box>
-            <Typography
-              variant="subtitle1"
-              sx={{ color: UCU.white, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0.5 }}
-            >
-              UCU
+            <Typography variant="subtitle1" sx={{ color: WW.white, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0.5 }}>
+              WalletWise
             </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: UCU.goldLight, fontSize: 9, letterSpacing: 0.6, lineHeight: 1, display: 'block' }}
-            >
-              UGANDA CHRISTIAN UNIVERSITY
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, letterSpacing: 0.6, lineHeight: 1, display: 'block' }}>
+              PERSONAL FINANCE TRACKER
             </Typography>
           </Box>
         </Stack>
-        <Typography
-          variant="caption"
-          sx={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, display: 'block', mt: 0.5 }}
-        >
-          Learning Management System
-        </Typography>
       </Box>
 
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.15)' }} />
@@ -151,19 +112,14 @@ export default function ModernLayout({ children, user }) {
                 mb: 0.5,
                 px: 1.5,
                 py: 1,
-                color: active ? UCU.gold : 'rgba(255,255,255,0.75)',
-                bgcolor: active ? 'rgba(201,162,39,0.15)' : 'transparent',
-                borderLeft: active ? `3px solid ${UCU.gold}` : '3px solid transparent',
-                '&:hover': {
-                  bgcolor: 'rgba(255,255,255,0.08)',
-                  color: UCU.white,
-                },
+                color: active ? WW.accent : 'rgba(255,255,255,0.75)',
+                bgcolor: active ? 'rgba(240,165,0,0.15)' : 'transparent',
+                borderLeft: active ? `3px solid ${WW.accent}` : '3px solid transparent',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.08)', color: WW.white },
                 transition: 'all 0.18s ease',
               }}
             >
-              <ListItemIcon sx={{ minWidth: 38, color: 'inherit' }}>
-                {icon}
-              </ListItemIcon>
+              <ListItemIcon sx={{ minWidth: 38, color: 'inherit' }}>{icon}</ListItemIcon>
               <ListItemText
                 primary={
                   <Typography sx={{ fontWeight: active ? 700 : 500, fontSize: 14, color: 'inherit' }}>
@@ -178,38 +134,22 @@ export default function ModernLayout({ children, user }) {
 
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.15)' }} />
 
-      {/* User info + logout at bottom */}
+      {/* User info + logout */}
       <Box sx={{ px: 2, py: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Avatar
-            sx={{
-              width: 36,
-              height: 36,
-              bgcolor: avatarBg(username),
-              border: `2px solid ${UCU.gold}`,
-              fontWeight: 700,
-              fontSize: 15,
-            }}
-          >
+          <Avatar sx={{ width: 36, height: 36, bgcolor: avatarBg(username), border: `2px solid ${WW.accent}`, fontWeight: 700, fontSize: 15 }}>
             {username[0]?.toUpperCase()}
           </Avatar>
           <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-            <Typography
-              variant="body2"
-              sx={{ color: UCU.white, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-            >
+            <Typography variant="body2" sx={{ color: WW.white, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {username}
             </Typography>
             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.45)', fontSize: 10 }}>
-              Student
+              Account Holder
             </Typography>
           </Box>
           <Tooltip title="Logout">
-            <IconButton
-              size="small"
-              onClick={handleLogout}
-              sx={{ color: 'rgba(255,255,255,0.55)', '&:hover': { color: UCU.gold } }}
-            >
+            <IconButton size="small" onClick={handleLogout} sx={{ color: 'rgba(255,255,255,0.55)', '&:hover': { color: WW.accent } }}>
               <LogoutIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -220,7 +160,7 @@ export default function ModernLayout({ children, user }) {
 
   // ── Full layout shell ───────────────────────────────────────────────────────
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: UCU.offWhite }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: WW.offWhite }}>
 
       {/* Permanent sidebar */}
       <Drawer
@@ -228,12 +168,7 @@ export default function ModernLayout({ children, user }) {
         sx={{
           width: DRAWER_WIDTH,
           flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-            border: 'none',
-            boxShadow: '4px 0 20px rgba(0,0,0,0.12)',
-          },
+          '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box', border: 'none', boxShadow: '4px 0 20px rgba(0,0,0,0.12)' },
         }}
       >
         {drawer}
@@ -243,42 +178,23 @@ export default function ModernLayout({ children, user }) {
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Top AppBar */}
-        <AppBar
-          position="static"
-          elevation={0}
-          sx={{
-            bgcolor: UCU.white,
-            borderBottom: `3px solid ${UCU.maroon}`,
-            color: 'text.primary',
-          }}
-        >
+        <AppBar position="static" elevation={0} sx={{ bgcolor: WW.white, borderBottom: `3px solid ${WW.teal}`, color: 'text.primary' }}>
           <Toolbar sx={{ minHeight: 56 }}>
-            <Breadcrumbs
-              separator={<NavigateNextIcon fontSize="small" sx={{ color: UCU.maroon }} />}
-              sx={{ flexGrow: 1 }}
-            >
-              <Link
-                underline="hover"
-                onClick={() => navigate('/dashboard')}
-                sx={{ cursor: 'pointer', fontSize: 13, color: UCU.maroon, fontWeight: 600 }}
-              >
+            <Breadcrumbs separator={<NavigateNextIcon fontSize="small" sx={{ color: WW.teal }} />} sx={{ flexGrow: 1 }}>
+              <Link underline="hover" onClick={() => navigate('/dashboard')} sx={{ cursor: 'pointer', fontSize: 13, color: WW.teal, fontWeight: 600 }}>
                 Home
               </Link>
-              <Typography sx={{ fontSize: 13, fontWeight: 700, color: UCU.maroon }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 700, color: WW.teal }}>
                 {pageLabel}
               </Typography>
             </Breadcrumbs>
 
             <Chip
-              avatar={
-                <Avatar sx={{ bgcolor: `${avatarBg(username)} !important`, fontSize: 12 }}>
-                  {username[0]?.toUpperCase()}
-                </Avatar>
-              }
+              avatar={<Avatar sx={{ bgcolor: `${avatarBg(username)} !important`, fontSize: 12 }}>{username[0]?.toUpperCase()}</Avatar>}
               label={username}
               size="small"
               variant="outlined"
-              sx={{ borderColor: UCU.maroon, color: UCU.maroon, fontWeight: 600, fontSize: 12 }}
+              sx={{ borderColor: WW.teal, color: WW.teal, fontWeight: 600, fontSize: 12 }}
             />
           </Toolbar>
         </AppBar>
@@ -289,22 +205,18 @@ export default function ModernLayout({ children, user }) {
         </Box>
 
         {/* Footer */}
-        <Box
-          sx={{
-            textAlign: 'center',
-            py: 1.5,
-            borderTop: '1px solid rgba(123,28,28,0.12)',
-            color: UCU.maroon,
-            fontSize: 11,
-            fontWeight: 500,
-            opacity: 0.7,
-          }}
-        >
-          © {new Date().getFullYear()} Uganda Christian University — Learning Management System
+        <Box sx={{ textAlign: 'center', py: 1.5, borderTop: '1px solid rgba(13,110,110,0.12)', color: WW.teal, fontSize: 11, fontWeight: 500, opacity: 0.7 }}>
+          © {new Date().getFullYear()} WalletWise — Personal Finance Tracker
         </Box>
       </Box>
     </Box>
   );
 }
 
-
+import PropTypes from 'prop-types';
+ModernLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+  user: PropTypes.shape({ username: PropTypes.string }),
+  onLogout: PropTypes.func,
+};
+ModernLayout.defaultProps = { user: null, onLogout: null };

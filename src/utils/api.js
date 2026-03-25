@@ -1,56 +1,30 @@
 /**
- * utils/api.js – Centralised API Client
+ * utils/api.js – WalletWise Centralised API Client
  *
- * KEY CONCEPT – Separation of Concerns
- * All HTTP requests live here so every component calls a clean function
- * instead of writing raw fetch() calls with headers and JSON.stringify.
- * If the base URL changes, you only need to update one constant.
- *
- * KEY CONCEPT – async/await with fetch
- * fetch() returns a Promise.  We use async/await so the code reads like
- * synchronous code.  We also check res.ok so that HTTP error responses
- * (4xx, 5xx) are thrown as errors, not silently returned as data.
- *
- * KEY CONCEPT – Authorization header
- * Protected routes require the JWT in every request:
- *   Authorization: Bearer <token>
- * The helper function authHeaders() builds this object so we don't repeat it.
+ * All HTTP requests live here so components call clean functions instead
+ * of writing raw fetch() calls.  If the base URL changes, update API_BASE.
  */
 
-// The Express server base URL. Change this when you deploy to production.
 const API_BASE = 'http://localhost:3000/api';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/**
- * Build the common JSON + Authorization headers.
- * @param {string} token – JWT from localStorage
- * @returns {Object} headers object ready for fetch()
- */
 const authHeaders = (token) => ({
   'Content-Type': 'application/json',
   Authorization: `Bearer ${token}`,
 });
 
-/**
- * Wrapper around fetch that throws a proper Error for non-2xx responses.
- * @param {string} url
- * @param {RequestInit} options
- * @returns {Promise<any>} parsed JSON body
- */
 const request = async (url, options = {}) => {
   const res = await fetch(url, options);
   const data = await res.json();
   if (!res.ok) {
-    // Throw an Error so components can catch it and show a message
-    throw new Error(data.error || `Request failed with status ${res.status}`);
+    throw new Error(data.message || data.error || `Request failed (${res.status})`);
   }
   return data;
 };
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
-/** POST /api/login – Returns { token, user } on success */
 export const login = ({ username, password }) =>
   request(`${API_BASE}/login`, {
     method: 'POST',
@@ -58,7 +32,6 @@ export const login = ({ username, password }) =>
     body: JSON.stringify({ username, password }),
   });
 
-/** POST /api/register – Returns { message } on success */
 export const register = (username, password, email) =>
   request(`${API_BASE}/register`, {
     method: 'POST',
@@ -66,72 +39,129 @@ export const register = (username, password, email) =>
     body: JSON.stringify({ username, password, email }),
   });
 
-// ── Chapters ──────────────────────────────────────────────────────────────────
+// ── Reference Data ────────────────────────────────────────────────────────────
 
-/** GET /api/chapters – Public; returns array of chapters */
-export const getChapters = () =>
-  request(`${API_BASE}/chapters`);
+/** GET /api/reference-data/income-types */
+export const getIncomeTypes = () =>
+  request(`${API_BASE}/reference-data/income-types`);
 
-/** GET /api/chapters/stats – Returns aggregate stats (requires auth) */
-export const getChapterStats = (token) =>
-  request(`${API_BASE}/chapters/stats`, { headers: authHeaders(token) });
+/** GET /api/reference-data/expense-types */
+export const getExpenseTypes = () =>
+  request(`${API_BASE}/reference-data/expense-types`);
 
-/** GET /api/chapters/:id – Public; returns a single chapter */
-export const getChapter = (id) =>
-  request(`${API_BASE}/chapters/${id}`);
+// ── Income ────────────────────────────────────────────────────────────────────
 
-/** POST /api/chapters – Protected; creates a new chapter */
-export const createChapter = (chapter, token) =>
-  request(`${API_BASE}/chapters`, {
+/**
+ * GET /api/income
+ * @param {string} token
+ * @param {{ type_id?, from?, to?, limit?, offset? }} [filters]
+ */
+export const getIncome = (token, filters = {}) => {
+  const q = new URLSearchParams(
+    Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''))
+  ).toString();
+  const incomeUrl = q ? `${API_BASE}/income?${q}` : `${API_BASE}/income`;
+  return request(incomeUrl, { headers: authHeaders(token) });
+};
+
+/** GET /api/income/:id */
+export const getIncomeById = (id, token) =>
+  request(`${API_BASE}/income/${id}`, { headers: authHeaders(token) });
+
+/** POST /api/income */
+export const createIncome = (body, token) =>
+  request(`${API_BASE}/income`, {
     method: 'POST',
     headers: authHeaders(token),
-    body: JSON.stringify(chapter),
+    body: JSON.stringify(body),
   });
 
-/** PUT /api/chapters/:id – Protected; updates name/description */
-export const updateChapter = (id, chapter, token) =>
-  request(`${API_BASE}/chapters/${id}`, {
+/** PUT /api/income/:id */
+export const updateIncome = (id, body, token) =>
+  request(`${API_BASE}/income/${id}`, {
     method: 'PUT',
     headers: authHeaders(token),
-    body: JSON.stringify(chapter),
+    body: JSON.stringify(body),
   });
 
-/** DELETE /api/chapters/:id – Protected; removes a chapter */
-export const deleteChapter = (id, token) =>
-  request(`${API_BASE}/chapters/${id}`, {
+/** DELETE /api/income/:id */
+export const deleteIncome = (id, token) =>
+  request(`${API_BASE}/income/${id}`, {
     method: 'DELETE',
     headers: authHeaders(token),
   });
 
-/** GET /api/chapters/:id/users – Protected; returns enrolled users */
-export const getUsersInChapter = (chapterId, token) =>
-  request(`${API_BASE}/chapters/${chapterId}/users`, {
-    headers: authHeaders(token),
-  });
+// ── Expense ───────────────────────────────────────────────────────────────────
 
-/** POST /api/chapters/add-user – Protected; enrols a user */
-export const addUserToChapter = (userId, chapterId, token) =>
-  request(`${API_BASE}/chapters/add-user`, {
+/**
+ * GET /api/expense
+ * @param {string} token
+ * @param {{ type_id?, from?, to?, limit?, offset? }} [filters]
+ */
+export const getExpenses = (token, filters = {}) => {
+  const q = new URLSearchParams(
+    Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''))
+  ).toString();
+  const expenseUrl = q ? `${API_BASE}/expense?${q}` : `${API_BASE}/expense`;
+  return request(expenseUrl, { headers: authHeaders(token) });
+};
+
+/** GET /api/expense/:id */
+export const getExpenseById = (id, token) =>
+  request(`${API_BASE}/expense/${id}`, { headers: authHeaders(token) });
+
+/** POST /api/expense */
+export const createExpense = (body, token) =>
+  request(`${API_BASE}/expense`, {
     method: 'POST',
     headers: authHeaders(token),
-    body: JSON.stringify({ userId, chapterId }),
+    body: JSON.stringify(body),
   });
 
-// ── Users ─────────────────────────────────────────────────────────────────────
+/** PUT /api/expense/:id */
+export const updateExpense = (id, body, token) =>
+  request(`${API_BASE}/expense/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  });
 
-/** GET /api/users – Protected; returns all users */
+/** DELETE /api/expense/:id */
+export const deleteExpense = (id, token) =>
+  request(`${API_BASE}/expense/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+
+// ── Balance ───────────────────────────────────────────────────────────────────
+
+/** GET /api/balance – live balance row */
+export const getLiveBalance = (token) =>
+  request(`${API_BASE}/balance`, { headers: authHeaders(token) });
+
+/** GET /api/balance/trend?days=30 */
+export const getBalanceTrend = (token, days = 30) =>
+  request(`${API_BASE}/balance/trend?days=${days}`, { headers: authHeaders(token) });
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+/** GET /api/dashboard?from=YYYY-MM-DD&to=YYYY-MM-DD */
+export const getDashboard = (token, filters = {}) => {
+  const q = new URLSearchParams(
+    Object.fromEntries(Object.entries(filters).filter(([, v]) => v))
+  ).toString();
+  const dashUrl = q ? `${API_BASE}/dashboard?${q}` : `${API_BASE}/dashboard`;
+  return request(dashUrl, { headers: authHeaders(token) });
+};
+
+// ── Users (admin) ─────────────────────────────────────────────────────────────
+
 export const getUsers = (token) =>
-  request(`${API_BASE}/users`, {
-    headers: authHeaders(token),
-  });
+  request(`${API_BASE}/users`, { headers: authHeaders(token) });
 
-/** GET /api/users/:id – Protected; returns a single user */
 export const getUserById = (id, token) =>
-  request(`${API_BASE}/users/${id}`, {
-    headers: authHeaders(token),
-  });
+  request(`${API_BASE}/users/${id}`, { headers: authHeaders(token) });
 
-/** PUT /api/users/:id – Protected; updates username/email */
 export const updateUser = (id, user, token) =>
   request(`${API_BASE}/users/${id}`, {
     method: 'PUT',
@@ -139,7 +169,6 @@ export const updateUser = (id, user, token) =>
     body: JSON.stringify(user),
   });
 
-/** DELETE /api/users/:id – Protected; removes a user */
 export const deleteUser = (id, token) =>
   request(`${API_BASE}/users/${id}`, {
     method: 'DELETE',
