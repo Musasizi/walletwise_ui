@@ -19,11 +19,11 @@ import { login } from '../utils/api';
 
 // ── WalletWise palette ────────────────────────────────────────────────────────
 const WW = {
-  teal:      '#0D6E6E',
-  tealDark:  '#094E4E',
+  teal: '#0D6E6E',
+  tealDark: '#094E4E',
   tealLight: '#E0F2F1',
-  accent:    '#F0A500',
-  white:     '#FFFFFF',
+  accent: '#F0A500',
+  white: '#FFFFFF',
 };
 
 const FEATURES = [
@@ -34,10 +34,10 @@ const FEATURES = [
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function Login({ onLogin }) {
+export default function Login({ setToken }) {
   const navigate = useNavigate();
-  const [form,    setForm]    = useState({ username: '', password: '' });
-  const [error,   setError]   = useState('');
+  const [form, setForm] = useState({ username: '', password: '' });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -46,8 +46,10 @@ export default function Login({ onLogin }) {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const res = await login(form.username, form.password);
-      onLogin(res.user ?? res.data?.user, res.token ?? res.data?.token);
+      const res = await login({ username: form.username, password: form.password });
+      const token = res.token ?? res.data?.token;
+      localStorage.setItem('token', token);
+      setToken(token);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Invalid credentials. Please try again.');
@@ -158,4 +160,4 @@ export default function Login({ onLogin }) {
     </Box>
   );
 }
-Login.propTypes = { onLogin: PropTypes.func.isRequired };
+Login.propTypes = { setToken: PropTypes.func.isRequired };
